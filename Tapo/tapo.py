@@ -39,7 +39,7 @@ class Tapo:
 
         response = requests.post("http://{}/app".format(self.IP), data=json.dumps(data), verify=False)
 
-        if response.status_code != 200:
+        if response.status_code != 200 or b'error' in response.content:
             self.logger.fatal('Error during key handshake!\n' + response.content.decode('utf-8'))
             return False
 
@@ -82,7 +82,7 @@ class Tapo:
 
         response = requests.post("http://{}/app".format(self.IP), cookies=self.cookies, data=json.dumps(secureData), verify=False)
 
-        if response.status_code != 200:
+        if response.status_code != 200 or b'error' in response.content:
             self.logger.fatal('Error during login request!\n' + response.content.decode('utf-8'))
             return False
 
@@ -105,8 +105,9 @@ class Tapo:
 
         response = requests.post("http://{}/app?token={}".format(self.IP,self.authToken), cookies=self.cookies, data=json.dumps(secureData), verify=False)
         
-        if response.status_code != 200:
+        if response.status_code != 200 or b'error' in response.content:
             self.logger.fatal('Error during request!\nRequest: ' + json.dumps(data) + '\nResponse:' + response.content.decode('utf-8'))
+            return None
 
         encryptedJsonResponse = json.loads(response.content.decode("utf-8"))['result']['response']
         
