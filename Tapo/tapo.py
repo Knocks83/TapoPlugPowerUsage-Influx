@@ -2,7 +2,6 @@ import Tapo.encryption as encryption
 
 import requests
 import json
-from base64 import b64encode
 import logging
 
 
@@ -99,8 +98,8 @@ class Tapo:
         data = {
             "method": "login_device",
             "params": {
-                "username": b64encode(emailHash.encode()).decode("utf-8"),
-                "password": b64encode(self.password.encode()).decode("utf-8"),
+                "username": encryption.b64Encode(emailHash),
+                "password": encryption.b64Encode(self.password),
             },
             "requestTimeMils":0
         }

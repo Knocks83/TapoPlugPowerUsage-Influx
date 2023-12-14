@@ -35,6 +35,11 @@ def calcSHA256(text: bytes) -> bytes:
   return SHA256.new(text).digest()
 
 
+# Just wrap b64encode to use the encryption module instead of the base64 one
+def b64Encode(text: str) -> str:
+  return base64.b64encode(text.encode('UTF-8')).decode('UTF-8')
+
+
 def decodeTapoKey(tapoKey: str, tapoKeyPair: dict[str, str]) -> dict[str, bytes] | None:
   try:
     encrypt_data = base64.b64decode(tapoKey)
