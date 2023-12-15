@@ -15,11 +15,14 @@ class Tapo:
         self.user = username
         self.password = password
         self.terminalUUID = terminalUUID
+        self.seq = None
 
-        if self.__init_old__() is None:
-            if self.__init_new__() is None:
+        if not self.__init_old__():
+            self.logger.debug('Old login failed!')
+            if not self.__init_new__():
+                self.logger.fatal('Login failed!')
                 return None
-        
+
         self.logger.info('Login succesful!')
 
 
@@ -27,12 +30,12 @@ class Tapo:
         self.keyPair = encryption.generateKeyPair()
 
         # Get the keys and log in.
-        # If there was an error during either of the steps, the returned object will just be "None"
+        # If there was an error during either of the steps, the returned object will just be "False"
         if not self.__get_keys__():
-            return None
-        
+            return False
         if not self.__login__():
-            return None
+            return False
+        return True        
 
 
     # There is now a new protocol used to "secure" queries to the plugs
@@ -49,7 +52,7 @@ class Tapo:
 
         if serverHash != localSeedAuthHash:
             logging.error('Wrong login!\nServer Hash: ' + serverHash + '\nLocal Auth: ' + localSeedAuthHash)
-            return None
+            return False
 
         # Continue the handshake by sending a new hash generated from the hashes above
         response = self.session.post("http://{}/app".format(self.IP) + '/handshake2', data=encryption.calcSHA256(remoteSeed + localSeed + authHash), verify=False)
@@ -65,6 +68,8 @@ class Tapo:
         self.seq = int.from_bytes(ivSeq[-4:], "big", signed=True)
         self.signature = encryption.calcSHA256(b"ldk" + localSeed + remoteSeed + authHash)[:28]
 
+        return True
+
 
     # Get the keys used to encrypt/decrypt the requests directed to the plug.
     # @return bool Whether the operation was succesful or not
@@ -79,11 +84,13 @@ class Tapo:
 
         response = self.session.post("http://{}/app".format(self.IP), data=json.dumps(data), verify=False)
 
-        if response.status_code != 200 or b'error' in response.content:
-            self.logger.fatal('Old login failed!')
+        if response.status_code != 200:
             return False
 
-        self.key = json.loads(response.content.decode('utf-8'))['result']['key']
+        try:
+            self.key = json.loads(response.content.decode('utf-8'))['result']['key']
+        except KeyError:
+            return False
 
         self.decodedKey = encryption.decodeTapoKey(self.key, self.keyPair)
 
@@ -116,7 +123,7 @@ class Tapo:
 
         response = self.session.post("http://{}/app".format(self.IP), data=json.dumps(secureData), verify=False)
 
-        if response.status_code != 200 or b'error' in response.content:
+        if response.status_code != 200:
             self.logger.fatal('Error during login request!\n' + response.content.decode('utf-8'))
             return False
 
@@ -142,7 +149,7 @@ class Tapo:
             url = "http://{}/app/request".format(self.IP)
             response = self.session.post(url, data=encryptedJsonData, params={"seq": self.seq})
 
-            if response.status_code != 200 or b'error' in response.content:
+            if response.status_code != 200:
                 self.logger.fatal('Error during request!\nRequest: ' + json.dumps(data) + '\nResponse:' + response.content.decode('utf-8'))
                 return None
 
@@ -163,7 +170,7 @@ class Tapo:
 
             response = self.session.post(url, data=json.dumps(secureData), verify=False)
 
-            if response.status_code != 200 or b'error' in response.content:
+            if response.status_code != 200:
                 self.logger.fatal('Error during request!\nRequest: ' + json.dumps(data) + '\nResponse:' + response.content.decode('utf-8'))
                 return None
 

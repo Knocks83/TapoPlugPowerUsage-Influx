@@ -9,6 +9,7 @@ import logging
 from time import sleep
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 logger = logging.getLogger('Tapo/Run')
 
 tapo = Tapo(cfg.tapoIP, cfg.tapoUser, cfg.tapoPwd, cfg.tapoTerminalUUID)
