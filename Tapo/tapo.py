@@ -162,7 +162,7 @@ class Tapo:
             secureData = {
                 "method":"securePassthrough",
                 "params": {
-                "request": encryptedJsonData
+                    "request": encryptedJsonData
                 }
             }
 
@@ -200,4 +200,3 @@ class Tapo:
 
         response = self.__request__(data)
         return json.loads(response)
-

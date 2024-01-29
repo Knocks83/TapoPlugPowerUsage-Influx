@@ -20,7 +20,7 @@ def generateKeyPair() -> dict[str, str]:
 
 
 # Just wrap "get_random_bytes" to use the encryption module instead of the Crypto one
-def getRandomBytes(size=16):
+def getRandomBytes(size=16) -> bytes:
   return get_random_bytes(size)
 
 
